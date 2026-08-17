@@ -65,6 +65,9 @@
 
   <!-- PLANER -->
   <section id="tab-planer" class="tab-panel">
+    <div class="planer-toolbar">
+      <button id="open-sync-modal" class="btn-ghost">🔄 Eksportuj / importuj plan (telefon ↔ komputer)</button>
+    </div>
     <div class="planer-summary" id="planer-summary"></div>
     <div id="planer-list" class="planer-list"></div>
     <div class="planer-empty" id="planer-empty">
@@ -104,6 +107,30 @@
   </div>
 </div>
 
+<!-- MODAL SYNCHRONIZACJI -->
+<div id="sync-modal" class="modal-overlay">
+  <div class="modal-box">
+    <button id="sync-modal-close" class="modal-close">&times;</button>
+    <div class="modal-content">
+      <h2>Eksportuj / importuj plan</h2>
+      <p class="hint">Zeskanuj poniższy kod QR aparatem w telefonie (otworzy stronę z Twoim planem, spiżarnią i listą zakupów) albo skopiuj link i wyślij go sobie w dowolny sposób. Import nadpisze obecny plan i spiżarnię na urządzeniu, na którym go otworzysz.</p>
+      <div id="sync-qr" class="sync-qr"></div>
+      <div class="sync-link-row">
+        <input type="text" id="sync-link-input" readonly>
+        <button id="sync-copy-btn" class="btn-primary">Kopiuj link</button>
+      </div>
+      <div class="modal-section">
+        <h4>Masz kod/link z innego urządzenia? Wklej go tutaj</h4>
+        <div class="sync-link-row">
+          <input type="text" id="sync-import-input" placeholder="wklej link lub kod...">
+          <button id="sync-import-btn" class="btn-primary">Importuj</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="vendor/qrcode.min.js"></script>
 <script src="recipes.js"></script>
 <script src="app.js"></script>
 </body>

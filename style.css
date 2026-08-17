@@ -329,6 +329,29 @@ h2 { margin-top: 0; }
 }
 .summary-stat b { display: block; font-size: 1.5rem; color: var(--green-700); }
 .summary-stat span { font-size: 0.78rem; color: var(--ink-500); }
+.planer-toolbar { display: flex; justify-content: flex-end; margin-bottom: 14px; }
+
+/* Sync modal */
+.sync-qr {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+  background: white;
+  border-radius: 12px;
+  margin: 14px 0;
+}
+.sync-qr svg, .sync-qr canvas, .sync-qr img { max-width: 220px; width: 100%; height: auto; }
+.sync-link-row { display: flex; gap: 8px; }
+.sync-link-row input {
+  flex: 1;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink-900);
+  font-size: 0.85rem;
+  min-width: 0;
+}
 .planer-list { display: flex; flex-direction: column; gap: 10px; }
 .planer-item {
   background: var(--card-bg);

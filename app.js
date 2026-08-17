@@ -414,6 +414,136 @@ function renderPantry() {
   });
 }
 
+// ---------- Synchronizacja między urządzeniami (QR / link) ----------
+function buildSyncPayload() {
+  return { v: 1, plan, pantry: Array.from(pantry) };
+}
+
+function buildSyncUrl() {
+  const encoded = encodeURIComponent(JSON.stringify(buildSyncPayload()));
+  return `${location.origin}${location.pathname}?sync=${encoded}`;
+}
+
+function extractSyncCode(raw) {
+  const trimmed = raw.trim();
+  try {
+    const url = new URL(trimmed);
+    const fromUrl = url.searchParams.get("sync");
+    if (fromUrl) return fromUrl;
+  } catch (e) {
+    // to nie jest pełny URL - traktuj jako surowy kod
+  }
+  return trimmed;
+}
+
+function applySyncPayload(payload) {
+  if (!payload || typeof payload !== "object" || !payload.plan) {
+    throw new Error("Nieprawidłowy format danych.");
+  }
+  plan = payload.plan;
+  pantry = new Set(payload.pantry || []);
+  persistPlan();
+  persistPantry();
+  updatePlanBadge();
+  renderRecipeGrid();
+  renderPlaner();
+  renderPantry();
+}
+
+function decodeSyncCode(rawCode) {
+  const code = extractSyncCode(rawCode);
+  if (!code) return null;
+  return JSON.parse(decodeURIComponent(code));
+}
+
+function importSyncCode(rawCode) {
+  let payload;
+  try {
+    payload = decodeSyncCode(rawCode);
+  } catch (e) {
+    alert("Nie udało się odczytać kodu synchronizacji — sprawdź, czy skopiowałeś go w całości.");
+    return;
+  }
+  if (!payload) return;
+  const itemCount = Object.keys(payload.plan || {}).length;
+  const pantryCount = (payload.pantry || []).length;
+  const ok = confirm(
+    `Zaimportować plan (${itemCount} dań) i spiżarnię (${pantryCount} produktów)?\nTo nadpisze obecny plan i spiżarnię na tym urządzeniu.`
+  );
+  if (!ok) return;
+  try {
+    applySyncPayload(payload);
+  } catch (e) {
+    alert("Nie udało się zaimportować: " + e.message);
+  }
+}
+
+function openSyncModal() {
+  const url = buildSyncUrl();
+  document.getElementById("sync-link-input").value = url;
+  const qrEl = document.getElementById("sync-qr");
+  qrEl.innerHTML = "";
+  try {
+    new QRCode(qrEl, { text: url, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+  } catch (e) {
+    qrEl.innerHTML = '<p class="hint">Plan jest zbyt duży, żeby zmieścić się w kodzie QR — skorzystaj z linku poniżej.</p>';
+  }
+  document.getElementById("sync-modal").classList.add("open");
+}
+
+document.getElementById("open-sync-modal").addEventListener("click", openSyncModal);
+document.getElementById("sync-modal-close").addEventListener("click", () => {
+  document.getElementById("sync-modal").classList.remove("open");
+});
+document.getElementById("sync-modal").addEventListener("click", (ev) => {
+  if (ev.target.id === "sync-modal") ev.currentTarget.classList.remove("open");
+});
+document.getElementById("sync-copy-btn").addEventListener("click", () => {
+  const input = document.getElementById("sync-link-input");
+  input.select();
+  const btn = document.getElementById("sync-copy-btn");
+  const original = btn.textContent;
+  const showCopied = () => {
+    btn.textContent = "Skopiowano!";
+    setTimeout(() => (btn.textContent = original), 1500);
+  };
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(input.value).then(showCopied).catch(() => document.execCommand("copy") && showCopied());
+  } else {
+    document.execCommand("copy");
+    showCopied();
+  }
+});
+document.getElementById("sync-import-btn").addEventListener("click", () => {
+  importSyncCode(document.getElementById("sync-import-input").value);
+});
+
+// Automatyczny import po otwarciu linku/zeskanowaniu kodu QR
+(function checkUrlForSyncOnLoad() {
+  const code = new URLSearchParams(location.search).get("sync");
+  if (!code) return;
+  let payload;
+  try {
+    payload = JSON.parse(decodeURIComponent(code));
+  } catch (e) {
+    history.replaceState(null, "", location.pathname);
+    return;
+  }
+  const itemCount = Object.keys(payload.plan || {}).length;
+  const pantryCount = (payload.pantry || []).length;
+  const ok = confirm(
+    `Wykryto plan do zaimportowania (${itemCount} dań, ${pantryCount} produktów w spiżarni).\nCzy chcesz go wczytać? To nadpisze obecny plan i spiżarnię na tym urządzeniu.`
+  );
+  history.replaceState(null, "", location.pathname);
+  if (ok) {
+    try {
+      applySyncPayload(payload);
+    } catch (e) {
+      alert("Nie udało się zaimportować danych.");
+    }
+  }
+})();
+
 // ---------- Init ----------
 updatePlanBadge();
 renderRecipeGrid();
