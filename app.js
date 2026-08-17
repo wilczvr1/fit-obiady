@@ -558,9 +558,11 @@ function buildPrintContent() {
 
   const aggregate = buildShoppingAggregate();
   const byCategory = {};
-  aggregate.forEach((item) => {
+  let alreadyBought = 0;
+  aggregate.forEach((item, key) => {
     const owned = pantry.has(item.name.trim().toLowerCase());
     if (owned) return;
+    if (checked.has(key)) { alreadyBought++; return; }
     if (!byCategory[item.category]) byCategory[item.category] = [];
     byCategory[item.category].push(item);
   });
@@ -613,7 +615,8 @@ function buildPrintContent() {
       <h1>Fit Obiady 2×2 — Menu tygodnia</h1>
       <p class="print-meta">Wygenerowano ${dateStr} · ${entries.length} dań · ${totalDays} dni pokryte obiadem · ${totalPortions} porcji do pudełek</p>
       <h2>Lista zakupów</h2>
-      ${shopHtml || "<p>Brak składników do kupienia (wszystko masz już w spiżarni).</p>"}
+      ${shopHtml || "<p>Brak składników do kupienia (wszystko masz już w spiżarni albo już odznaczone jako kupione).</p>"}
+      ${alreadyBought > 0 ? `<p class="print-meta">(Pominięto ${alreadyBought} pozycji już odznaczonych jako kupione na liście zakupów.)</p>` : ""}
       <h2>Przepisy</h2>
       ${recipesHtml}
     </div>
