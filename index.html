@@ -67,6 +67,7 @@
   <section id="tab-planer" class="tab-panel">
     <div class="planer-toolbar">
       <button id="open-sync-modal" class="btn-ghost">🔄 Eksportuj / importuj plan (telefon ↔ komputer)</button>
+      <button id="export-pdf-btn" class="btn-ghost">🖨️ Eksportuj do PDF (menu + zakupy)</button>
     </div>
     <div class="planer-summary" id="planer-summary"></div>
     <div id="planer-list" class="planer-list"></div>
@@ -129,6 +130,9 @@
     </div>
   </div>
 </div>
+
+<!-- OBSZAR DO WYDRUKU / PDF (widoczny tylko przy drukowaniu) -->
+<div id="print-area"></div>
 
 <script src="vendor/qrcode.min.js"></script>
 <script src="recipes.js"></script>

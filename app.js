@@ -544,6 +544,89 @@ document.getElementById("sync-import-btn").addEventListener("click", () => {
   }
 })();
 
+// ---------- Eksport do PDF (menu + lista zakupów) ----------
+function buildPrintContent() {
+  const entries = Object.entries(plan)
+    .map(([id, count]) => ({ recipe: getRecipeById(Number(id)), count }))
+    .filter((e) => e.recipe)
+    .sort((a, b) => a.recipe.name.localeCompare(b.recipe.name, "pl"));
+
+  if (!entries.length) {
+    alert("Twój plan jest pusty — dodaj dania w zakładce Przepisy, żeby wygenerować PDF.");
+    return false;
+  }
+
+  const aggregate = buildShoppingAggregate();
+  const byCategory = {};
+  aggregate.forEach((item) => {
+    const owned = pantry.has(item.name.trim().toLowerCase());
+    if (owned) return;
+    if (!byCategory[item.category]) byCategory[item.category] = [];
+    byCategory[item.category].push(item);
+  });
+  const order = ["mieso", "warzywa", "nabial", "zboza", "przyprawy_sosy", "inne"];
+
+  const shopHtml = order
+    .filter((cat) => byCategory[cat] && byCategory[cat].length)
+    .map((cat) => {
+      const items = byCategory[cat].sort((a, b) => a.name.localeCompare(b.name, "pl"));
+      return `
+      <div class="print-shop-category">
+        <h4>${CATEGORY_LABELS[cat]}</h4>
+        <ul class="print-shop-items">
+          ${items
+            .map(
+              (it) =>
+                `<li><span class="print-checkbox"></span>${it.name} — ${Math.round(it.amount * 100) / 100} ${it.unit}</li>`
+            )
+            .join("")}
+        </ul>
+      </div>`;
+    })
+    .join("");
+
+  const totalDays = entries.reduce((s, e) => s + e.count * 2, 0);
+  const totalPortions = entries.reduce((s, e) => s + e.count * 4, 0);
+
+  const recipesHtml = entries
+    .map(({ recipe: r, count }) => {
+      const scaledPortions = r.portions * count;
+      return `
+      <div class="print-recipe">
+        <h3>${r.name}${count > 1 ? ` (×${count})` : ""}</h3>
+        <div class="print-tags">${r.protein_source} · ${r.equipment.map((e) => EQUIP_LABELS[e]).join(" ")} · na ${scaledPortions} porcje</div>
+        <div class="print-macros"><b>${r.kcal} kcal</b> / porcję · <b>${r.protein}g</b> białka · <b>${r.carbs}g</b> węgli · <b>${r.fat}g</b> tłuszczu · ~${r.weight_g}g porcja</div>
+        <ul class="print-ingredients">
+          ${r.ingredients.map((i) => `<li>${i.name} — ${Math.round(i.amount * count * 100) / 100} ${i.unit}</li>`).join("")}
+        </ul>
+        <ol class="print-steps">
+          ${r.steps.map((s) => `<li>${s}</li>`).join("")}
+        </ol>
+      </div>`;
+    })
+    .join("");
+
+  const dateStr = new Date().toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" });
+
+  document.getElementById("print-area").innerHTML = `
+    <div class="print-doc">
+      <h1>Fit Obiady 2×2 — Menu tygodnia</h1>
+      <p class="print-meta">Wygenerowano ${dateStr} · ${entries.length} dań · ${totalDays} dni pokryte obiadem · ${totalPortions} porcji do pudełek</p>
+      <h2>Lista zakupów</h2>
+      ${shopHtml || "<p>Brak składników do kupienia (wszystko masz już w spiżarni).</p>"}
+      <h2>Przepisy</h2>
+      ${recipesHtml}
+    </div>
+  `;
+  return true;
+}
+
+document.getElementById("export-pdf-btn").addEventListener("click", () => {
+  if (buildPrintContent()) {
+    window.print();
+  }
+});
+
 // ---------- Init ----------
 updatePlanBadge();
 renderRecipeGrid();
